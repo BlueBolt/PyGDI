@@ -8,36 +8,6 @@
 
 extern PyTypeObject GDI_Type;
 
-static PyObject * getSGERoot( PyObject *self ) 
-{
-   sge_gdi_ctx_class_t *ctx = NULL;
-   const char *sge_root = NULL;
-   PyObject* result = Py_None;
-   
-   ctx = getGDIContext();
-
-   if (ctx == NULL) 
-   {
-      Py_DECREF(result);
-      return NULL; 
-   }
-
-   sge_gdi_set_thread_local_ctx(ctx);
-
-   sge_root = ctx->get_sge_root(ctx);
-
-   if (sge_root != NULL) 
-   {    
-      result = PyString_FromString(sge_root);
-   }
-
-   sge_gdi_set_thread_local_ctx(NULL);
-   // destroy the ctx object
-   closeGDIContext(ctx);
-   
-   return result;
-}
-
 static PyObject * getQueues( PyObject *self ) 
 {
    sge_gdi_ctx_class_t *ctx = NULL;
@@ -144,8 +114,6 @@ static PyObject * getHosts( PyObject *self )
 }
 
 static PyMethodDef module_methods[] = {
-   {"getSGERoot",  getSGERoot, METH_NOARGS,
-     "return the path to SGE_ROOT"},
    {"getQueues",  getQueues, METH_NOARGS,
      "Return a list of names of queues"},
    {"getHosts",  getHosts, METH_NOARGS,

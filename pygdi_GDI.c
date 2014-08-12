@@ -1,5 +1,6 @@
 
 
+#include "pygdi_common.h"
 #include "types.h"
 
 // context type
@@ -51,88 +52,129 @@ static PyMemberDef GDI_members[] = {
 
 // Main methods
 
-// static PyObject *
-// GDI_initialise(GDI* self)
-// {
-//     PyObject *result;  
+static PyObject *
+GDI_initialise(GDI* self)
+{
+    PyObject *result = Py_None;  
 
 
-//     return result;
-// }
+    return result;
+}
 
-// static PyObject *
-// GDI_close(GDI* self)
-// {
-//     PyObject *result;  
-
-    
-//     return result;
-// }
-
-// static PyObject *
-// GDI_getAdminUser(GDI* self)
-// {
-//     PyObject *result;  
+static PyObject *
+GDI_close(GDI* self)
+{
+    PyObject *result = Py_None;  
 
     
-//     return result;
-// }
+    return result;
+}
 
-// static PyObject *
-// GDI_getSGERoot(GDI* self)
-// {
-//     PyObject *result;  
-
-    
-//     return result;
-// }
-
-// static PyObject *
-// GDI_getSGECell(GDI* self)
-// {
-//     PyObject *result;  
+static PyObject *
+GDI_getAdminUser(GDI* self)
+{
+    PyObject *result = Py_None;  
 
     
-//     return result;
-// }
+    return result;
+}
 
-// static PyObject *
-// GDI_getActQMaster(GDI* self)
-// {
-//     PyObject *result;  
+static PyObject *
+GDI_getSGERoot(GDI* self)
+{
+
+   sge_gdi_ctx_class_t *ctx = NULL;
+   const char *sge_root = NULL;
+   PyObject* result = Py_None;
+   
+   ctx = getGDIContext();
+
+   if (ctx == NULL) 
+   {
+      Py_DECREF(result);
+      return NULL; 
+   }
+
+   sge_gdi_set_thread_local_ctx(ctx);
+
+   sge_root = ctx->get_sge_root(ctx);
+
+   if (sge_root != NULL) 
+   {    
+      result = PyString_FromString(sge_root);
+   }
+
+   sge_gdi_set_thread_local_ctx(NULL);
+   // destroy the ctx object
+   closeGDIContext(ctx);
+   
+   return result;
+}
+
+static PyObject *
+GDI_getSGECell(GDI* self)
+{
+    PyObject *result = Py_None;  
 
     
-//     return result;
-// }
+    return result;
+}
 
-// static int 
-// GDI_getSgeQmasterPort(GDI* self)
-// {
-//     int result = 0;  
-
-    
-//     return result;
-// }
-
-// static int 
-// GDI_getSgeExecdPort(GDI* self)
-// {
-//     int result = 0;  
+static PyObject *
+GDI_getActQMaster(GDI* self)
+{
+    PyObject *result = Py_None;  
 
     
-//     return result;
-// }
+    return result;
+}
 
-// static PyObject *
-// GDI_getRealExecHostList(GDI* self)
-// {
-//     PyObject *result;  
+static int 
+GDI_getSgeQmasterPort(GDI* self)
+{
+    int result = 0;  
 
     
-//     return result;
-// }
+    return result;
+}
+
+static int 
+GDI_getSgeExecdPort(GDI* self)
+{
+    int result = 0;  
+
+    
+    return result;
+}
+
+static PyObject *
+GDI_getRealExecHostList(GDI* self)
+{
+    PyObject *result = PyList_New(0);  
+
+    
+    return result;
+}
 
 static PyMethodDef GDI_methods[] = {
+    {"initialise", (PyCFunction)GDI_initialise, METH_NOARGS,
+     PyDoc_STR("initalise the GDI connection")},
+    {"close", (PyCFunction)GDI_close, METH_NOARGS,
+     PyDoc_STR("close the GDI connection")},
+    {"getAdminUser", (PyCFunction)GDI_getAdminUser, METH_NOARGS,
+     PyDoc_STR("initalise the GDI connection")},
+    {"getActQMaster", (PyCFunction)GDI_getActQMaster, METH_NOARGS,
+     PyDoc_STR("initalise the GDI connection")},
+    {"getSGECell", (PyCFunction)GDI_getSGECell, METH_NOARGS,
+     PyDoc_STR("initalise the GDI connection")},
+    {"getSGERoot", (PyCFunction)GDI_getSGERoot, METH_NOARGS,
+     PyDoc_STR("initalise the GDI connection")},
+    {"getSgeExecdPort", (PyCFunction)GDI_getSgeExecdPort, METH_NOARGS,
+     PyDoc_STR("initalise the GDI connection")},
+    {"getSgeQmasterPort", (PyCFunction)GDI_getSgeQmasterPort, METH_NOARGS,
+     PyDoc_STR("initalise the GDI connection")},
+    {"getRealExecHostList", (PyCFunction)GDI_getRealExecHostList, METH_NOARGS,
+     PyDoc_STR("initalise the GDI connection")},
     {NULL}  /* Sentinel */
 };
 

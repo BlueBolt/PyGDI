@@ -31,3 +31,16 @@
 /*___INFO__MARK_END__*/
 
 #include <Python.h>
+
+
+pygdi_Host *
+wrap_host_item(const lListItem *host)
+{
+    pygdi_Host *py_entry;
+
+    py_entry = PyObject_New(TreeEntry, &TreeEntryType);
+    if (py_entry)
+        py_entry->entry = entry;
+
+    return py_entry;
+}
