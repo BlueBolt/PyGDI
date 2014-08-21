@@ -33,7 +33,7 @@
 #include <Python.h>
 
 
-pygdi_Host *
+gdi_Host *
 wrap_host_item(const lListItem *host)
 {
     pygdi_Host *py_entry;
@@ -44,3 +44,4 @@ wrap_host_item(const lListItem *host)
 
     return py_entry;
 }
+
