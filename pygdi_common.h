@@ -37,7 +37,9 @@
 #include "sgeobj/sge_event.h"
 
 
-sge_gdi_ctx_class_t * getGDIContext( void );
+int nativeInit(void);
+
+sge_gdi_ctx_class_t * getGDIContext( int ctx_index );
 void closeGDIContext( sge_gdi_ctx_class_t *ctx );
 
 // static PyObject * pygdi_fill(PyObject *self, PyObject *list, PyObject *filter, const char *classname, int target_list, lDescr *descr, PyObject *answers);

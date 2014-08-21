@@ -1,5 +1,5 @@
-#ifndef PYGDI_COMMON_H
-#define PYGDI_COMMON_H
+#ifndef PYGDI_GDI_H
+#define PYGDI_GDI_H
 
 #include <Python.h>
 #include <structmember.h>

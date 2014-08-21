@@ -7,13 +7,21 @@
 #include "types.h"
 
 extern PyTypeObject GDI_Type;
+extern PyTypeObject Host_Type;
+extern PyTypeObject Queue_Type;
 
 static PyObject * getQueues( PyObject *self ) 
 {
+   lList *qlp = NULL,*alp = NULL;
    sge_gdi_ctx_class_t *ctx = NULL;
    PyObject* result = PyList_New(0);
    
-   ctx = getGDIContext();
+   if (sge_gdi2_setup(&ctx, QSTAT, MAIN_THREAD, &alp) != AE_OK) 
+   {
+      answer_list_output(&alp);
+      lFreeList(&alp);  
+      return NULL; 
+   }
 
    if (ctx == NULL) 
    {
@@ -24,7 +32,6 @@ static PyObject * getQueues( PyObject *self )
    sge_gdi_set_thread_local_ctx(ctx);
 
    // get the queues 
-   lList *qlp = NULL,*alp = NULL;
    lListElem *cq = NULL;
    int num_queues = 0;
    lCondition *where = NULL;
@@ -62,10 +69,16 @@ static PyObject * getQueues( PyObject *self )
 
 static PyObject * getHosts( PyObject *self ) 
 {
+   lList *hlp = NULL,*alp = NULL;
    sge_gdi_ctx_class_t *ctx = NULL;
    PyObject* result = PyList_New(0);
    
-   ctx = getGDIContext();
+   if (sge_gdi2_setup(&ctx, QSTAT, MAIN_THREAD, &alp) != AE_OK) 
+   {
+      answer_list_output(&alp);
+      lFreeList(&alp);  
+      return NULL; 
+   }
 
    if (ctx == NULL) 
    {
@@ -75,7 +88,6 @@ static PyObject * getHosts( PyObject *self )
    sge_gdi_set_thread_local_ctx(ctx);
 
    // get the hosts 
-   lList *hlp = NULL,*alp = NULL;
    lListElem *eh = NULL;
    int num_hosts = 0;
    lCondition *where = NULL;
