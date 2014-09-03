@@ -21,7 +21,11 @@ include_dirs = [    '.',
 extra_objects = [os.path.join(basedir,'../../LINUXX64/libsge.a')]
 
 pygdi_core = Extension('pygdi._pygdi',
-                    sources = ['pygdi_common.c','pygdi_GDI.c','pygdi.c'],
+                    sources = ['pygdi_common.c',
+                               'pygdi_GDI.c',
+                               'pygdi_GEObject.c',
+                               'pygdi_Host.c',
+                               'pygdi.c'],
                     include_dirs = include_dirs,
                     extra_objects = extra_objects,)
 

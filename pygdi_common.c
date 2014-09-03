@@ -1,3 +1,38 @@
+//******************************************************************************
+// (c)2014 BlueBolt Ltd.  All rights reserved.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+// * Neither the name of BlueBolt nor the names of
+// its contributors may be used to endorse or promote products derived
+// from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// Author:Ashley Retallack - ashley.retallack@gmail.com
+// 
+// File:pygdi_common.c
+// 
+// 
+//******************************************************************************
+
 /*___INFO__MARK_BEGIN__*/
 /*************************************************************************
  *
@@ -64,13 +99,30 @@
 #include "sgeobj/sge_sharetree.h"
 #include "sgeobj/sge_utility.h"
 #include "sgeobj/sge_event.h"
+#include "sgeobj/sge_object.h"
 
 #include "pygdi_common.h"
+#include "types.h"
 
 #define MAX_GDI_CTX_ARRAY_SIZE 1024
 
 static pthread_mutex_t sge_gdi_ctx_mutex = PTHREAD_MUTEX_INITIALIZER;
 static sge_gdi_ctx_class_t* sge_gdi_ctx_array[MAX_GDI_CTX_ARRAY_SIZE];
+
+int listelem_to_obj(lListElem *ep,PyObject *obj,const lDescr* descr,lList **alpp)
+{
+   int ret = 0;
+   if (object_has_type(ep,EH_Type))
+   {
+      obj = PyObject_New(Host,(PyTypeObject * ) &ExecHost_Type );
+   }
+   
+   if (obj == NULL){
+      ret = 1;
+   }
+
+   return(ret);
+}
 
 int nativeInit(void)
 {
@@ -154,7 +206,9 @@ sge_gdi_ctx_class_t * getGDIContext( int ctx_index )
    //    return NULL; 
    // }
 
-   ctx = sge_gdi_ctx_array[ctx_index];
+   if (ctx_index != -1)
+      ctx = sge_gdi_ctx_array[ctx_index];
+
    return ctx;
 }
 
@@ -167,4 +221,125 @@ void closeGDIContext( sge_gdi_ctx_class_t *ctx )
    cl_com_handle_t *handle = cl_com_get_handle(ctx->get_component_name(ctx), 0);
    cl_commlib_shutdown_handle(handle, CL_FALSE);
    sge_gdi_ctx_class_destroy(&ctx);
+}
+
+int py_typeid_to_gdi_type( int type_id, lDescr *obj )
+{
+
+   const sge_object_type sge_type = type_id;
+
+   obj = object_type_get_descr(sge_type);
+
+   if (obj == NULL)
+      return -1;
+
+   return 0;
+}
+
+
+// void generic_fill_list(PyObject pygdi, PyObject list, lList *lp, lList **alpp) 
+// {
+// }                   
+
+void pygdi_fill(int ctxid, PyObject *list, PyObject *filter, int target_list, lDescr *descr) 
+{
+
+   /* receive Cull Object */
+   lList *lp = NULL;
+   lList *alp = NULL;
+   lCondition *where = NULL;
+   lEnumeration *what  = NULL;
+   sge_gdi_ctx_class_t *ctx = NULL;
+   int ret = -1;
+
+   DENTER(TOP_LAYER, "pygdi_fill");
+      
+   // if (filter != NULL && target_list != SGE_STN_LIST) { 
+   //   ret=build_filter(env, filter, &where, &alp);
+   //   if (ret != JGDI_SUCCESS) {
+   //      goto error;
+   //   }
+   // }
+   
+   /* get context */
+   ctx = getGDIContext(ctxid);
+   
+   if (ctx == NULL) 
+   {
+      ret = 1;
+   }
+
+   sge_gdi_set_thread_local_ctx(ctx);
+
+   /* create what and where */
+   what = lWhat("%T(ALL)", descr);
+   where = lWhere(""); // for now no filters
+   
+   /* get list */
+   alp = ctx->gdi(ctx, target_list, SGE_GDI_GET, &lp, where, what);
+
+   if (answer_list_has_error(&alp)) {
+      ret = 1;
+      goto error;
+   } else {
+      lFreeList(&alp);
+   }   
+
+   if (target_list == SGE_STN_LIST) {
+      if (answer_list_has_error(&alp)) {
+         ret = 1;
+         goto error;
+      } else {
+         lFreeList(&alp);
+      }   
+   }
+
+   // populate a list
+   ret = generic_fill_list(list, lp, &alp);
+  
+error:
+   
+   /*
+   ** this must be called before throw_error_from_answer_list, otherwise there is a pending 
+   ** exception in the way
+   */
+   sge_gdi_set_thread_local_ctx(NULL);
+
+   /* if error throw exception */
+   if (ret != 0) {
+      // set error string
+   }
+   
+   lFreeWhat(&what);
+   lFreeWhere(&where);
+   lFreeList(&lp);
+   lFreeList(&alp);
+   DRETURN_VOID;
+}
+
+int generic_fill_list(PyObject *list, lList *lp, lList **alpp) 
+{
+
+   const lDescr *listdescr = NULL;
+   lListElem *ep = NULL;
+   PyObject* obj;
+   int ret = 0;
+   int count = 0;
+
+   DENTER(TOP_LAYER, "generic_fill_list");
+
+   list = PyList_New(lGetNumberOfElem(lp));
+
+   listdescr = lGetListDescr(lp);
+   for_each(ep, lp) {
+      if ((ret = listelem_to_obj(ep, &obj, listdescr, alpp)) != 0) {
+         return(ret);
+      }
+      // add to list object
+      PyList_Append(list,obj);
+      count++;
+   }
+
+   return(ret);
+
 }
